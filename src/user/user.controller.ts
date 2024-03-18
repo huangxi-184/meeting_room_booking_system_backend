@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Post, Query, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, DefaultValuePipe, Get, Inject, ParseIntPipe, Post, Query, UnauthorizedException } from '@nestjs/common';
 import { EmailService } from 'src/email/email.service';
 import { RedisService } from 'src/redis/redis.service';
 import { RegisterUserDto } from './dto/registeruser.dto';
@@ -10,6 +10,7 @@ import { RequireLogin, UserInfo } from 'src/custom.decorator';
 import { UserDetailVo } from './vo/userinfo.vo';
 import { UpdateUserPasswordDto } from './dto/updateuserpassword.dto';
 import { UpdateUserDto } from './dto/udpateuser.dto';
+import { generateParseIntPipe } from 'src/utils';
 
 @Controller('user')
 export class UserController {
@@ -195,4 +196,22 @@ export class UserController {
   async update(@UserInfo('userId') userId: number, @Body() updateUserDto: UpdateUserDto) {
     return await this.userService.update(userId, updateUserDto);
   }
+
+  @Get('freeze')
+  async freeze(@Query('id') userId: number) {
+    await this.userService.freezeUserById(userId);
+    return 'success';
+  }
+
+  @Get('list')
+  async list(
+    @Query('pageNo', new DefaultValuePipe(1), generateParseIntPipe('pageNo')) pageNo: number,
+    @Query('pageSize', new DefaultValuePipe(10), generateParseIntPipe('pageSize')) pageSize: number,
+    @Query('username') username: string,
+    @Query('nickName') nickName: string,
+    @Query('email') email: string
+  ) {
+    return await this.userService.findUsersByPage(username, nickName, email, pageNo, pageSize);
+  }
+
 }
